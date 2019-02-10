@@ -10,4 +10,4 @@ class SE():
     @staticmethod
     def play(se):
         # type: (str) -> None
-        subprocess.call(["aplay", se], stdout=subprocess.PIPE)
+        subprocess.call(["aplay", se], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
