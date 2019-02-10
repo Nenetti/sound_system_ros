@@ -12,6 +12,7 @@ from re import compile
 from atexit import register
 
 import signal
+
 RECOGOUT_START = "<RECOGOUT>"
 RECOGOUT_END = "</RECOGOUT>"
 REJECT = "<REJECTED"
@@ -27,6 +28,7 @@ class Julius:
         self.port = port
         self.client = None
         self.process = None
+        self.is_active = True
 
         self.boot("session_en.jconf", False)
         sleep(1)
@@ -40,13 +42,12 @@ class Julius:
 
         signal.signal(signal.SIGINT, exit)
 
-
-
     def boot(self, config="session_en.jconf", is_debug=False):
         if is_debug:
             self.process = subprocess.Popen([PACKAGE + "/julius/boot.sh", config, str(self.port)])
         else:
-            self.process = subprocess.Popen([PACKAGE + "/julius/boot.sh", config, str(self.port)], stdout=subprocess.PIPE)
+            self.process = subprocess.Popen([PACKAGE + "/julius/boot.sh", config, str(self.port)],
+                                            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
     def recognition(self):
         # type: ()-> str
@@ -54,7 +55,6 @@ class Julius:
         is_recogout = False
         while True:
             recv = self.client.recv(2048).decode("utf-8")
-            print(recv)
             if not len(recv) > 0:
                 continue
             if data[-1] is "\n":
@@ -90,9 +90,12 @@ class Julius:
 
     def resume(self):
         self.client.send("RESUME\n")
+        self.is_active = True
 
     def pause(self):
         self.client.send("TERMINATE\n")
+        self.is_active = False
+
 
 if __name__ == '__main__':
     Julius()
