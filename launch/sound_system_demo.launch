@@ -1,0 +1,14 @@
+<launch>
+
+  <node pkg="sound_system" name="sound_system" type="main.py" output="screen">
+  <param name="config" value="session_en.jconf"/>
+  <param name="host" value="localhost"/>
+  <param name="port" value="10500"/>
+  <param name="debug" value="false"/>
+  </node>
+
+  <node pkg="sound_system" name="demo_repeat" type="demo_repeat.py" output="screen">
+  </node>
+
+</launch>
+
