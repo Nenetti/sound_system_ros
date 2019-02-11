@@ -6,20 +6,27 @@ from module.se import SE
 from module.svox import SVOX
 import rospy
 import rosparam
-from std_msgs.msg import String
+from std_msgs.msg import String, Bool
 import subprocess
 import os
 import rospkg
 
+
 def start():
-    def resume(message=None):
-        # type: (String) -> None
+
+    def activate(message):
+        # type: (Bool) -> None
+        if message.data:
+            resume()
+        else:
+            pause()
+
+    def resume():
         if not module.is_active:
             module.resume()
             SE.play(SE.START)
 
-    def pause(message=None):
-        # type: (String) -> None
+    def pause():
         if module.is_active:
             module.pause()
             SE.play(SE.STOP)
@@ -31,11 +38,10 @@ def start():
         resume()
 
     rospy.init_node('sound_system', anonymous=False)
-    rospy.set_param("/pkg", rospkg.RosPack().get_path('sound_system'))
 
-    rospy.Subscriber("sound_system/resume", String, resume)
-    rospy.Subscriber("sound_system/pause", String, pause)
+    rospy.Subscriber("sound_system/recognition/active", Bool, activate)
     rospy.Subscriber("sound_system/speak", String, speak)
+
     reco_pub = rospy.Publisher('sound_system/recognition', String, queue_size=10)
 
     config = rospy.get_param("/sound_system/config")
@@ -44,7 +50,7 @@ def start():
     is_debug = rospy.get_param("/sound_system/debug")
 
     module = Julius(host, port, config, is_debug)
-    
+
     while True:
         if module.is_active:
             result = module.recognition()

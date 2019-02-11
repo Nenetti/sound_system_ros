@@ -18,7 +18,7 @@ RECOGOUT_END = "</RECOGOUT>"
 REJECT = "<REJECTED"
 WHYPO_WORD = "<WHYPO"
 WORD = "WORD="
-PACKAGE = rospy.get_param("/pkg")
+PACKAGE = rospkg.RosPack().get_path('sound_system')
 
 
 class Julius:

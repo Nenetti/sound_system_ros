@@ -2,7 +2,7 @@ import subprocess
 import rospkg
 import rospy
 
-PATH = rospy.get_param("/pkg") + "/voice"
+PATH = rospkg.RosPack().get_path('sound_system') + "/voice"
 
 class SVOX:
 

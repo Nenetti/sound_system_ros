@@ -2,7 +2,7 @@ import rospkg
 import subprocess
 import rospy
 
-PATH = rospy.get_param("/pkg") + "/SE"
+PATH = rospkg.RosPack().get_path('sound_system') + "/SE"
 
 class SE():
     START = PATH + "/" + "start.wav"
