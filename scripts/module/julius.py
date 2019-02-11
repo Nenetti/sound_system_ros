@@ -18,19 +18,20 @@ RECOGOUT_END = "</RECOGOUT>"
 REJECT = "<REJECTED"
 WHYPO_WORD = "<WHYPO"
 WORD = "WORD="
-PACKAGE = rospkg.RosPack().get_path('sound_system_ros')
+PACKAGE = rospy.get_param("/pkg")
 
 
 class Julius:
-    def __init__(self, host="localhost", port=10500):
+    def __init__(self, host, port, config, is_debug=False):
         # type: (str, int) -> None
+        self.is_debug = is_debug
         self.host = host
         self.port = port
         self.client = None
         self.process = None
         self.is_active = True
 
-        self.boot("session_en.jconf", False)
+        self.boot(config)
         sleep(1)
         self.connect()
 
@@ -42,8 +43,8 @@ class Julius:
 
         signal.signal(signal.SIGINT, exit)
 
-    def boot(self, config="session_en.jconf", is_debug=False):
-        if is_debug:
+    def boot(self, config="session_en.jconf"):
+        if self.is_debug:
             self.process = subprocess.Popen([PACKAGE + "/julius/boot.sh", config, str(self.port)])
         else:
             self.process = subprocess.Popen([PACKAGE + "/julius/boot.sh", config, str(self.port)],
@@ -55,6 +56,8 @@ class Julius:
         is_recogout = False
         while True:
             recv = self.client.recv(2048).decode("utf-8")
+            if self.is_debug:
+                print(recv)
             if not len(recv) > 0:
                 continue
             if data[-1] is "\n":
