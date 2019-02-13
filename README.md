@@ -33,15 +33,18 @@ roslaunch sound_system sound_system_demo.launch
 
 ### Subscribe Topic
 
-* **`/sound_system/recognition/active`** 音声認識のresume/pause ( std_msgs/Bool )
+* **`/sound_system/recognition/activate`** 音声認識のresume/pause ( std_msgs/Bool )
     true : resume
     false: pause
 
-* **`/sound_system/speak`** 読み上げ ( std_msgs/String )
+* **`/sound_system/speak`** 文の読み上げ ( std_msgs/String )
+
+* **`/sound_system/recognition`** 音声認識の開始要求 ( std_msgs/String )
+
 
 ### Publish Topic
 
-* **`/sound_system/recognition`** 音声認識文 ( std_msgs/String )
+* **`/sound_system/recognition/result`** 音声認識の結果文 ( std_msgs/String )
 
 
 ### Parameter
