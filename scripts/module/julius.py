@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 import sys
@@ -10,7 +11,8 @@ import subprocess
 from socket import socket, AF_INET, SOCK_STREAM
 from re import compile
 from atexit import register
-
+from std_msgs.msg import Bool, String
+from sound_system.srv import *
 import signal
 
 RECOGOUT_START = "<RECOGOUT>"
@@ -50,6 +52,14 @@ class Julius:
             self.process = subprocess.Popen([PACKAGE + "/julius/boot.sh", config, str(self.port)],
                                             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
+    def resume(self):
+        self.client.send("RESUME\n")
+        self.is_active = True
+
+    def pause(self):
+        self.client.send("TERMINATE\n")
+        self.is_active = False
+
     def recognition(self):
         # type: ()-> str
         data = " "
@@ -76,11 +86,12 @@ class Julius:
                 if sentences[0] == RECOGOUT_START:
                     is_recogout = True
                 if (sentences[0] == REJECT) or (is_recogout and sentences[0] == RECOGOUT_END):
-                    return None
+                    continue
+                    #return None
                 if sentences[0] == WHYPO_WORD:
                     for sentence in sentences:
                         if WORD in sentence:
-                            return sentence.split('"')[1]
+                            return sentence.split('"')[1].replace("_", " ")
 
     def connect(self):
         try:
@@ -91,14 +102,41 @@ class Julius:
         except IOError:
             sys.exit(1)
 
-    def resume(self):
-        self.client.send("RESUME\n")
-        self.is_active = True
-
-    def pause(self):
-        self.client.send("TERMINATE\n")
-        self.is_active = False
-
 
 if __name__ == '__main__':
-    Julius()
+
+    def activate(message):
+        # type: (Bool) -> None
+        if message.data:
+            j.resume()
+        else:
+            j.pause()
+
+
+    def response(message):
+        # type: (StatusRequest) -> StatusResponse
+        return StatusResponse(j.is_active)
+
+
+    def recognition(message):
+        # type: (RecognitionRequest) -> RecognitionResponse
+        j.resume()
+        result = RecognitionResponse(j.recognition())
+        j.pause()
+        return result
+
+
+    rospy.init_node('julius', anonymous=False)
+    rospy.Subscriber('sound_system/module/recognition/activate', Bool, activate)
+    rospy.Service("sound_system/module/recognition/status", Status, response)
+    rospy.Service("sound_system/module/recognition/request", Recognition, recognition)
+    # pub = rospy.Publisher("sound_system/module/recognition/result", String, queue_size=10)
+
+    config = rospy.get_param("/julius/config")
+    host = rospy.get_param("/julius/host")
+    port = rospy.get_param("/julius/port")
+    is_debug = rospy.get_param("/julius/debug")
+
+    j = Julius(host, port, config, is_debug)
+
+    rospy.spin()

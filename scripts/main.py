@@ -1,64 +1,65 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from module.julius import Julius
 from module.se import SE
-from module.svox import SVOX
 import rospy
 import rosparam
 from std_msgs.msg import String, Bool
 import subprocess
 import os
 import rospkg
+from sound_system.srv import *
 
 
 def start():
-
     def activate(message):
-        # type: (Bool) -> None
-        if message.data:
-            resume()
-        else:
+        status = get_status()
+        if status and not message.data:
             pause()
+            active_pub.publish(message)
+        elif not status and message.data:
+            resume()
+            active_pub.publish(message)
+
+    def get_status():
+        rospy.wait_for_service("sound_system/module/recognition/status")
+        request = rospy.ServiceProxy("sound_system/module/recognition/status", Status)
+        response = request()
+        return response.active
 
     def resume():
-        if not module.is_active:
-            module.resume()
-            SE.play(SE.START)
+        SE.play(SE.START)
 
     def pause():
-        if module.is_active:
-            module.pause()
-            SE.play(SE.STOP)
+        SE.play(SE.STOP)
 
     def speak(message):
         # type: (String) -> None
-        pause()
-        SVOX.play(message.data)
-        resume()
+        #if get_status():
+        #    pause()
+        rospy.wait_for_service("sound_system/module/speak")
+        request = rospy.ServiceProxy("sound_system/module/speak", Speak)
+        request(message.data)
+
+    def recognition(message):
+        activate(Bool(True))
+        rospy.wait_for_service("sound_system/module/recognition/request")
+        request = rospy.ServiceProxy("sound_system/module/recognition/request", Recognition)
+        response = request()
+        activate(Bool(False))
+        speak(String(response.result))
+        return RecognitionResponse(response.result)
 
     rospy.init_node('sound_system', anonymous=False)
 
-    rospy.Subscriber("sound_system/recognition/active", Bool, activate)
+    rospy.Subscriber("sound_system/recognition/activate", Bool, activate)
     rospy.Subscriber("sound_system/speak", String, speak)
 
-    reco_pub = rospy.Publisher('sound_system/recognition', String, queue_size=10)
+    active_pub = rospy.Publisher("sound_system/module/recognition/activate", Bool, queue_size=10)
+    rospy.Service("sound_system/recognition", Recognition, recognition)
+    rospy.Subscriber("sound_system/module/recognition/request2", String, recognition)
 
-    config = rospy.get_param("/sound_system/config")
-    host = rospy.get_param("/sound_system/host")
-    port = rospy.get_param("/sound_system/port")
-    is_debug = rospy.get_param("/sound_system/debug")
-
-    module = Julius(host, port, config, is_debug)
-
-    while True:
-        if module.is_active:
-            result = module.recognition()
-            if result is not None:
-                result = result.replace("_", " ")
-                reco_pub.publish(String(result))
-                if is_debug:
-                    print("RESULT: %s" % result)
+    rospy.spin()
 
 
 if __name__ == '__main__':
