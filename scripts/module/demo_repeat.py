@@ -11,7 +11,7 @@ if __name__ == "__main__":
         pub.publish(message.data)
 
     rospy.init_node('demo_repeat', anonymous=False)
-    rospy.Subscriber('sound_system/recognition', String, subscribe)
+    rospy.Subscriber('sound_system/recognition/result', String, subscribe)
     pub = rospy.Publisher('sound_system/speak', String, queue_size=10)
 
     rospy.spin()

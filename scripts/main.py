@@ -47,7 +47,7 @@ def start():
         request = rospy.ServiceProxy("sound_system/module/recognition/request", Recognition)
         response = request()
         activate(Bool(False))
-        speak(String(response.result))
+        recognition_pub.publish(String(response.result))
         return RecognitionResponse(response.result)
 
     rospy.init_node('sound_system', anonymous=False)
@@ -56,8 +56,9 @@ def start():
     rospy.Subscriber("sound_system/speak", String, speak)
 
     active_pub = rospy.Publisher("sound_system/module/recognition/activate", Bool, queue_size=10)
+    recognition_pub = rospy.Publisher("sound_system/recognition/result", String, queue_size=10)
     rospy.Service("sound_system/recognition", Recognition, recognition)
-    rospy.Subscriber("sound_system/module/recognition/request2", String, recognition)
+    rospy.Subscriber("sound_system/recognition", String, recognition)
 
     rospy.spin()
 
