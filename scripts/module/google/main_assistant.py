@@ -31,7 +31,6 @@ import sys
 import json
 
 from voice_assistant import *
-from text_assistant import *
 from googlesamples.assistant.grpc import audio_helpers, device_helpers
 
 ASSISTANT_API_ENDPOINT = 'embeddedassistant.googleapis.com'
