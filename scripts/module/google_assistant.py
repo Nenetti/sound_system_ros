@@ -10,24 +10,26 @@ import main_assistant
 
 
 # 引数は en-US か ja_jp
-def start(lang="en-US", debug=False, answer=False):
+def start(lang="en-US", debug=True, answer=False):
     def activate(message):
         # type: (Bool) -> None
         if message.data:
-            pass
+            actitive = True
         else:
-            pass
+            actitive = False
 
     def response(message):
         # type: (StatusRequest) -> StatusResponse
-        return True
+        return actitive
 
     def recognition(message):
         # type: (RecognitionRequest) -> RecognitionResponse
+        actitive = True
         rospy.loginfo("Recognition Start")
         result, answer = assistant.start()
         rospy.loginfo("Result -> %s" % result)
         rospy.loginfo("Answer -> %s" % answer)
+        actitive = False
         return RecognitionResponse(result)
 
     rospy.init_node('google_assistant', anonymous=False)
@@ -37,6 +39,7 @@ def start(lang="en-US", debug=False, answer=False):
     r = rospy.Rate(10)
 
     assistant = main_assistant.main(lang, debug, answer)
+    actitive = False
 
     rospy.spin()
 
